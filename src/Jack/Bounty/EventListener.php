@@ -2,7 +2,7 @@
 
 /*
 *   Bounty Pocketmine Plugin
-*   Copyright (C) 2019 Jackthehack21 (Jack Honour/Jackthehaxk21/JaxkDev)
+*   Copyright (C) 2019-2020 JaxkDev
 *
 *   This program is free software: you can redistribute it and/or modify
 *   it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@
 *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 *
 *   Twitter :: @JaxkDev
-*   Discord :: Jackthehaxk21#8860
-*   Email   :: gangnam253@gmail.com
+*   Discord :: JaxkDev#8860
+*   Email   :: JaxkDev@gmail.com
 */
 
 declare(strict_types=1);
@@ -108,12 +108,6 @@ class EventListener implements Listener{
                     $sender->sendMessage(C::GOLD."=== Credits ===");
                     $sender->sendMessage(C::GREEN."Developer: ".C::RED."Jackthehack21");
                     return true;
-                case 'version':
-                case 'ver':
-                    $sender->sendMessage(C::GOLD."=== DETAILS ===");
-                    $sender->sendMessage(C::GREEN."Name    ".C::GOLD.":: ".C::AQUA."Bounty");
-                    $sender->sendMessage(C::GREEN."Version    ".C::GOLD.":: ".C::AQUA.C::BOLD.C::RED."Release".C::RESET.C::AQUA." - v1.1.0");
-                    break;
                 case 'help':
                     $sender->sendMessage(C::GREEN."-- Bounty Help: --");
                     $sender->sendMessage(C::GOLD."/bounty new <playername> <amount>");
@@ -121,7 +115,6 @@ class EventListener implements Listener{
                     $sender->sendMessage(C::GOLD."/bounty list <page>");
                     if($this->plugin->config["leaderboard"] === true) $sender->sendMessage(C::GOLD."/bounty leaderboard");
                     $sender->sendMessage(C::GOLD."/bounty help");
-                    $sender->sendMessage(C::GOLD."/bounty version");
                     $sender->sendMessage(C::GOLD."/bounty credits");
                     break;
                 case "add":
@@ -341,13 +334,22 @@ class EventListener implements Listener{
     }
 
     public function onDeath(PlayerDeathEvent $event){
+		//TODO test projectile owning entity #15
+		$killer = null;
         $cause = $event->getEntity()->getLastDamageCause();
+		if ($cause === null) return false; //*shrug* - issues have arised when external plugins create deaths.
         if ($cause->getCause() != 1) return false; //not killed by entity
         if (!$cause instanceof EntityDamageByEntityEvent) return false; //double check of above check.
         if ($cause->getDamager() instanceof Player) {
             $killer = $cause->getDamager();
+		}
+		if ($cause->getDamager() instanceof Entity){
+			if ($cause->getDamager()->getOwningEntity() instanceof Player){
+				$killer = $cause->getDamager()->getOwningEntity();
+			}
+		}
+		if ($killer !== null){
             if(isset($this->plugin->data["bounty"][strtolower($event->getPlayer()->getName())])){
-
                 //events:
                 $ev = new BountyClaimEvent($this->plugin, $killer, $event->getPlayer(), $this->plugin->data["bounty"][strtolower($event->getPlayer()->getName())]);
 			    $this->plugin->getServer()->getPluginManager()->callEvent($ev);
